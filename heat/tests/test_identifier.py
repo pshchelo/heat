@@ -328,30 +328,25 @@ class IdentifierTest(testtools.TestCase):
     def test_equal(self):
         hi1 = identifier.HeatIdentifier('t', 's', 'i', 'p')
         hi2 = identifier.HeatIdentifier('t', 's', 'i', 'p')
-        self.assertTrue(hi1 == hi2)
+        self.assertEqual(hi1, hi2)
 
     def test_equal_dict(self):
         hi = identifier.HeatIdentifier('t', 's', 'i', 'p')
-        self.assertTrue(hi == dict(hi))
-        self.assertTrue(dict(hi) == hi)
+        self.assertEqual(hi, dict(hi))
 
     def test_not_equal(self):
         hi1 = identifier.HeatIdentifier('t', 's', 'i', 'p')
         hi2 = identifier.HeatIdentifier('t', 's', 'i', 'q')
-        self.assertFalse(hi1 == hi2)
-        self.assertFalse(hi2 == hi1)
+        self.assertNotEqual(hi1, hi2)
 
     def test_not_equal_dict(self):
         hi1 = identifier.HeatIdentifier('t', 's', 'i', 'p')
         hi2 = identifier.HeatIdentifier('t', 's', 'i', 'q')
-        self.assertFalse(hi1 == dict(hi2))
-        self.assertFalse(dict(hi1) == hi2)
-        self.assertFalse(hi1 == {'tenant': 't',
-                                 'stack_name': 's',
-                                 'stack_id': 'i'})
-        self.assertFalse({'tenant': 't',
-                          'stack_name': 's',
-                          'stack_id': 'i'} == hi1)
+        self.assertNotEqual(hi1, dict(hi2))
+        self.assertNotEqual(dict(hi1), hi2)
+        self.assertNotEqual(hi1, {'tenant': 't',
+                                  'stack_name': 's',
+                                  'stack_id': 'i'})
 
     def test_path_components(self):
         hi = identifier.HeatIdentifier('t', 's', 'i', 'p1/p2/p3')
