@@ -15,7 +15,9 @@
 
 import collections
 import json
-import re
+#import re
+import regex
+regex.DEFAULT_VERSION = regex.VERSION0
 
 from heat.common import exception
 
@@ -92,7 +94,7 @@ class ParamSchema(dict):
             self.raise_error(name, desc or err)
 
     def check_allowed_pattern(self, name, val, p, desc=None):
-        m = re.match(p, val)
+        m = regex.match(p, val)
         if m is None or m.end() != len(val):
             err = '"%s" does not match %s "%s"' % (val, ALLOWED_PATTERN, p)
             self.raise_error(name, desc or err)

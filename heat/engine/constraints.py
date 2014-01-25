@@ -16,6 +16,9 @@
 import collections
 import numbers
 import re
+import regex
+
+regex.DEFAULT_VERSION = regex.VERSION0
 
 
 class InvalidSchemaError(Exception):
@@ -416,7 +419,7 @@ class AllowedPattern(Constraint):
     def __init__(self, pattern, description=None):
         super(AllowedPattern, self).__init__(description)
         self.pattern = pattern
-        self.match = re.compile(pattern).match
+        self.match = regex.compile(pattern).match
 
     def _str(self):
         return _('Value must match pattern: %s') % self.pattern
