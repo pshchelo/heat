@@ -22,6 +22,7 @@ from heat.engine import clients
 from heat.engine import properties
 from heat.engine import resource
 from heat.engine.resources.neutron import net
+from heat.engine.resources.neutron import neutron
 from heat.engine.resources.neutron.neutron import NeutronResource as qr
 from heat.engine.resources.neutron import provider_net
 from heat.engine.resources.neutron import router
@@ -50,6 +51,85 @@ neutron_template = '''
         "dhcp_agent_ids": [
           "28c25a04-3f73-45a7-a2b4-59e183943ddc"
         ]
+      }
+    },
+    "unnamed_network": {
+      "Type": "OS::Neutron::Net"
+    },
+    "admin_down_network": {
+      "Type": "OS::Neutron::Net",
+      "Properties": {
+        "admin_state_up": false
+      }
+    },
+    "subnet": {
+      "Type": "OS::Neutron::Subnet",
+      "Properties": {
+        "network": { "Ref" : "network" },
+        "tenant_id": "c1210485b2424d48804aad5d39c61b8f",
+        "ip_version": 4,
+        "cidr": "10.0.3.0/24",
+        "allocation_pools": [{"start": "10.0.3.20", "end": "10.0.3.150"}],
+        "host_routes": [
+            {"destination": "10.0.4.0/24", "nexthop": "10.0.3.20"}],
+        "dns_nameservers": ["8.8.8.8"]
+      }
+    },
+    "port": {
+      "Type": "OS::Neutron::Port",
+      "Properties": {
+        "device_id": "d6b4d3a5-c700-476f-b609-1493dd9dadc0",
+        "name": "port1",
+        "network": { "Ref" : "network" },
+        "fixed_ips": [{
+          "subnet": { "Ref" : "subnet" },
+          "ip_address": "10.0.3.21"
+        }]
+      }
+    },
+    "port2": {
+      "Type": "OS::Neutron::Port",
+      "Properties": {
+        "name": "port2",
+        "network": { "Ref" : "network" }
+      }
+    },
+    "router": {
+      "Type": "OS::Neutron::Router",
+      "Properties": {
+        "l3_agent_id": "792ff887-6c85-4a56-b518-23f24fa65581"
+      }
+    },
+    "router_interface": {
+      "Type": "OS::Neutron::RouterInterface",
+      "Properties": {
+        "router_id": { "Ref" : "router" },
+        "subnet": { "Ref" : "subnet" }
+      }
+    },
+    "gateway": {
+      "Type": "OS::Neutron::RouterGateway",
+      "Properties": {
+        "router_id": { "Ref" : "router" },
+        "network": { "Ref" : "network" }
+      }
+    }
+  }
+}
+'''
+
+neutron_template_deprecated = '''
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Template to test Neutron resources",
+  "Parameters" : {},
+  "Resources" : {
+    "network": {
+      "Type": "OS::Neutron::Net",
+      "Properties": {
+        "name": "the_network",
+        "tenant_id": "c1210485b2424d48804aad5d39c61b8f",
+        "shared": true
       }
     },
     "unnamed_network": {
@@ -156,7 +236,7 @@ neutron_external_gateway_template = '''
 }
 '''
 
-neutron_floating_template = '''
+neutron_floating_template_deprecated = '''
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
   "Description" : "Template to test Neutron resources",
@@ -199,7 +279,50 @@ neutron_floating_template = '''
 }
 '''
 
-neutron_port_template = '''
+neutron_floating_template = '''
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Template to test Neutron resources",
+  "Parameters" : {},
+  "Resources" : {
+    "port_floating": {
+      "Type": "OS::Neutron::Port",
+      "Properties": {
+        "network": "xyz1234",
+        "fixed_ips": [{
+          "subnet": "sub1234",
+          "ip_address": "10.0.0.10"
+        }]
+      }
+    },
+    "floating_ip": {
+      "Type": "OS::Neutron::FloatingIP",
+      "Properties": {
+        "floating_network": "abcd1234",
+      }
+    },
+    "floating_ip_assoc": {
+      "Type": "OS::Neutron::FloatingIPAssociation",
+      "Properties": {
+        "floatingip_id": { "Ref" : "floating_ip" },
+        "port_id": { "Ref" : "port_floating" }
+      }
+    },
+    "router": {
+      "Type": "OS::Neutron::Router"
+    },
+    "gateway": {
+      "Type": "OS::Neutron::RouterGateway",
+      "Properties": {
+        "router_id": { "Ref" : "router" },
+        "network": "abcd1234"
+      }
+    }
+  }
+}
+'''
+
+neutron_port_template_deprecated = '''
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
   "Description" : "Template to test Neutron resources",
@@ -220,6 +343,28 @@ neutron_port_template = '''
 }
 '''
 
+neutron_port_template = '''
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Template to test Neutron resources",
+  "Parameters" : {},
+  "Resources" : {
+    "port": {
+      "Type": "OS::Neutron::Port",
+      "Properties": {
+        "network": "net1234",
+        "fixed_ips": [{
+          "subnet": "sub1234",
+          "ip_address": "10.0.3.21"
+        }],
+        "device_owner": "network:dhcp"
+      }
+    }
+  }
+}
+'''
+
+
 neutron_port_with_address_pair_template = '''
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
@@ -229,7 +374,7 @@ neutron_port_with_address_pair_template = '''
     "port": {
       "Type": "OS::Neutron::Port",
       "Properties": {
-        "network_id": "abcd1234",
+        "network": "abcd1234",
         "allowed_address_pairs": [{
           "ip_address": "10.0.3.21",
           "mac_address": "00-B0-D0-86-BB-F7"
@@ -571,6 +716,7 @@ class NeutronNetTest(HeatTestCase):
 
 @skipIf(neutronclient is None, 'neutronclient unavailable')
 class NeutronProviderNetTest(HeatTestCase):
+
     def setUp(self):
         super(NeutronProviderNetTest, self).setUp()
         self.m.StubOutWithMock(neutronclient.Client, 'create_network')
@@ -700,18 +846,83 @@ class NeutronSubnetTest(HeatTestCase):
         self.m.StubOutWithMock(neutronclient.Client, 'delete_subnet')
         self.m.StubOutWithMock(neutronclient.Client, 'show_subnet')
         self.m.StubOutWithMock(neutronclient.Client, 'update_subnet')
+        self.m.StubOutWithMock(neutron.neutronV20,
+                               'find_resourceid_by_name_or_id')
         self.m.StubOutWithMock(clients.OpenStackClients, 'keystone')
         utils.setup_dummy_db()
 
     def create_subnet(self, t, stack, resource_name):
         rsrc = subnet.Subnet('test_subnet', t['Resources'][resource_name],
                              stack)
-        scheduler.TaskRunner(rsrc.create)()
-        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
         return rsrc
 
     def test_subnet(self):
+        t = self._test_subnet()
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'network',
+            'None'
+        ).AndReturn('None')
+        stack = utils.parse_stack(t)
+        rsrc = self.create_subnet(t, stack, 'subnet')
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
+        rsrc.validate()
+        ref_id = rsrc.FnGetRefId()
+        self.assertEqual('91e47a57-7508-46fe-afc9-fc454e8580e1', ref_id)
+        self.assertIsNone(rsrc.FnGetAtt('network_id'))
+        self.assertEqual('fc68ea2c-b60b-4b4f-bd82-94ec81110766',
+                         rsrc.FnGetAtt('network_id'))
+        self.assertEqual('8.8.8.8', rsrc.FnGetAtt('dns_nameservers')[0])
 
+        # assert the dependency (implicit or explicit) between the ports
+        # and the subnet
+
+        self.assertIn(stack['port'], stack.dependencies[stack['subnet']])
+        self.assertIn(stack['port2'], stack.dependencies[stack['subnet']])
+        update_snippet = {
+            "Type": "OS::Neutron::Subnet",
+            "Properties": {
+                "name": 'mysubnet',
+                "network": {"Ref": "network"},
+                "tenant_id": "c1210485b2424d48804aad5d39c61b8f",
+                "ip_version": 4,
+                "cidr": "10.0.3.0/24",
+                "allocation_pools": [
+                    {"start": "10.0.3.20", "end": "10.0.3.150"}],
+                "dns_nameservers": ["8.8.8.8", "192.168.1.254"]
+            }
+        }
+        rsrc.handle_update(stack.resolve_static_data(update_snippet), {}, {})
+
+        self.assertIsNone(scheduler.TaskRunner(rsrc.delete)())
+        rsrc.state_set(rsrc.CREATE, rsrc.COMPLETE, 'to delete again')
+        self.assertIsNone(scheduler.TaskRunner(rsrc.delete)())
+        self.m.VerifyAll()
+
+    def test_subnet_deprecated(self):
+
+        t = self._test_subnet(resolve_neutron=False)
+        stack = utils.parse_stack(t)
+        rsrc = self.create_subnet(t, stack, 'subnet')
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
+        rsrc.validate()
+        ref_id = rsrc.FnGetRefId()
+        self.assertEqual('91e47a57-7508-46fe-afc9-fc454e8580e1', ref_id)
+        self.assertIsNone(rsrc.FnGetAtt('network_id'))
+        self.assertEqual('fc68ea2c-b60b-4b4f-bd82-94ec81110766',
+                         rsrc.FnGetAtt('network_id'))
+        self.assertEqual('8.8.8.8', rsrc.FnGetAtt('dns_nameservers')[0])
+
+        # assert the dependency (implicit or explicit) between the ports
+        # and the subnet
+        self.assertIn(stack['port'], stack.dependencies[stack['subnet']])
+        self.assertIn(stack['port2'], stack.dependencies[stack['subnet']])
+
+    def _test_subnet(self, resolve_neutron=True):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
         neutronclient.Client.create_subnet({
@@ -795,51 +1006,22 @@ class NeutronSubnetTest(HeatTestCase):
             '91e47a57-7508-46fe-afc9-fc454e8580e1'
         ).AndRaise(qe.NeutronClientException(status_code=404))
 
-        self.m.ReplayAll()
-        t = template_format.parse(neutron_template)
-        stack = utils.parse_stack(t)
-        rsrc = self.create_subnet(t, stack, 'subnet')
+        if resolve_neutron:
+            t = template_format.parse(neutron_template)
+        else:
+            t = template_format.parse(neutron_template_deprecated)
 
-        rsrc.validate()
-
-        ref_id = rsrc.FnGetRefId()
-        self.assertEqual('91e47a57-7508-46fe-afc9-fc454e8580e1', ref_id)
-        self.assertIsNone(rsrc.FnGetAtt('network_id'))
-        self.assertEqual('fc68ea2c-b60b-4b4f-bd82-94ec81110766',
-                         rsrc.FnGetAtt('network_id'))
-        self.assertEqual('8.8.8.8', rsrc.FnGetAtt('dns_nameservers')[0])
-
-        # assert the dependency (implicit or explicit) between the ports
-        # and the subnet
-        self.assertIn(stack['port'], stack.dependencies[stack['subnet']])
-        self.assertIn(stack['port2'], stack.dependencies[stack['subnet']])
-
-        update_snippet = {
-            "Type": "OS::Neutron::Subnet",
-            "Properties": {
-                "name": 'mysubnet',
-                "network_id": {"Ref": "network"},
-                "tenant_id": "c1210485b2424d48804aad5d39c61b8f",
-                "ip_version": 4,
-                "cidr": "10.0.3.0/24",
-                "allocation_pools": [
-                    {"start": "10.0.3.20", "end": "10.0.3.150"}],
-                "dns_nameservers": ["8.8.8.8", "192.168.1.254"],
-                'host_routes': [
-                    {'destination': u'10.0.4.0/24', 'nexthop': u'10.0.3.20'}]
-            }
-        }
-        rsrc.handle_update(stack.resolve_static_data(update_snippet), {}, {})
-
-        self.assertIsNone(scheduler.TaskRunner(rsrc.delete)())
-        rsrc.state_set(rsrc.CREATE, rsrc.COMPLETE, 'to delete again')
-        self.assertIsNone(scheduler.TaskRunner(rsrc.delete)())
-        self.m.VerifyAll()
+        return t
 
     def test_subnet_disable_dhcp(self):
 
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'network',
+            'None'
+        ).AndReturn('None')
         neutronclient.Client.create_subnet({
             'subnet': {
                 'name': utils.PhysName('test_stack', 'test_subnet'),
@@ -906,6 +1088,9 @@ class NeutronSubnetTest(HeatTestCase):
         stack = utils.parse_stack(t)
         rsrc = self.create_subnet(t, stack, 'subnet')
 
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
         rsrc.validate()
 
         ref_id = rsrc.FnGetRefId()
@@ -959,7 +1144,7 @@ class NeutronSubnetTest(HeatTestCase):
 @skipIf(neutronclient is None, 'neutronclient unavailable')
 class NeutronRouterTest(HeatTestCase):
 
-    @skipIf(router.neutronV20 is None, "Missing Neutron v2_0")
+    @skipIf(neutron.neutronV20 is None, "Missing Neutron v2_0")
     def setUp(self):
         super(NeutronRouterTest, self).setUp()
         self.m.StubOutWithMock(neutronclient.Client, 'create_router')
@@ -976,7 +1161,7 @@ class NeutronRouterTest(HeatTestCase):
                                'remove_router_from_l3_agent')
         self.m.StubOutWithMock(neutronclient.Client,
                                'list_l3_agent_hosting_routers')
-        self.m.StubOutWithMock(router.neutronV20,
+        self.m.StubOutWithMock(neutron.neutronV20,
                                'find_resourceid_by_name_or_id')
         self.m.StubOutWithMock(clients.OpenStackClients, 'keystone')
         utils.setup_dummy_db()
@@ -1184,6 +1369,12 @@ class NeutronRouterTest(HeatTestCase):
         self.assertIn(stack['router'], deps)
 
     def test_router_interface(self):
+        self._test_router_interface()
+
+    def test_router_interface_deprecated(self):
+        self._test_router_interface(resolve_neutron=False)
+
+    def _test_router_interface(self, resolve_neutron=True):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
         neutronclient.Client.add_interface_router(
@@ -1198,16 +1389,27 @@ class NeutronRouterTest(HeatTestCase):
             '3e46229d-8fce-4733-819a-b5fe630550f8',
             {'subnet_id': '91e47a57-7508-46fe-afc9-fc454e8580e1'}
         ).AndRaise(qe.NeutronClientException(status_code=404))
-        self.m.ReplayAll()
         t = template_format.parse(neutron_template)
         stack = utils.parse_stack(t)
-
-        rsrc = self.create_router_interface(
-            t, stack, 'router_interface', properties={
-                'router_id': '3e46229d-8fce-4733-819a-b5fe630550f8',
-                'subnet_id': '91e47a57-7508-46fe-afc9-fc454e8580e1'
-            })
-
+        if resolve_neutron:
+            neutron.neutronV20.find_resourceid_by_name_or_id(
+                mox.IsA(neutronclient.Client),
+                'subnet',
+                '91e47a57-7508-46fe-afc9-fc454e8580e1'
+            ).AndReturn('91e47a57-7508-46fe-afc9-fc454e8580e1')
+            self.m.ReplayAll()
+            rsrc = self.create_router_interface(
+                t, stack, 'router_interface', properties={
+                    'router_id': '3e46229d-8fce-4733-819a-b5fe630550f8',
+                    'subnet': '91e47a57-7508-46fe-afc9-fc454e8580e1'
+                })
+        else:
+            self.m.ReplayAll()
+            rsrc = self.create_router_interface(
+                t, stack, 'router_interface', properties={
+                    'router_id': '3e46229d-8fce-4733-819a-b5fe630550f8',
+                    'subnet_id': '91e47a57-7508-46fe-afc9-fc454e8580e1'
+                })
         scheduler.TaskRunner(rsrc.delete)()
         rsrc.state_set(rsrc.CREATE, rsrc.COMPLETE, 'to delete again')
         scheduler.TaskRunner(rsrc.delete)()
@@ -1308,13 +1510,13 @@ class NeutronRouterTest(HeatTestCase):
         stack = utils.parse_stack(t)
         res = router.RouterInterface('router_interface', json, stack)
         ex = self.assertRaises(exception.StackValidationFailed, res.validate)
-        self.assertEqual("Either subnet_id or port_id must be specified.",
+        self.assertEqual("Either subnet or port_id must be specified.",
                          str(ex))
 
     def test_gateway_router(self):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
-        router.neutronV20.find_resourceid_by_name_or_id(
+        neutron.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'fc68ea2c-b60b-4b4f-bd82-94ec81110766'
@@ -1336,7 +1538,7 @@ class NeutronRouterTest(HeatTestCase):
         rsrc = self.create_gateway_router(
             t, stack, 'gateway', properties={
                 'router_id': '3e46229d-8fce-4733-819a-b5fe630550f8',
-                'network_id': 'fc68ea2c-b60b-4b4f-bd82-94ec81110766'
+                'network': 'fc68ea2c-b60b-4b4f-bd82-94ec81110766'
             })
 
         scheduler.TaskRunner(rsrc.delete)()
@@ -1348,7 +1550,7 @@ class NeutronRouterTest(HeatTestCase):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
 
-        router.neutronV20.find_resourceid_by_name_or_id(
+        neutron.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'public'
@@ -1430,7 +1632,7 @@ class NeutronRouterTest(HeatTestCase):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
 
-        router.neutronV20.find_resourceid_by_name_or_id(
+        neutron.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'public'
@@ -1491,7 +1693,7 @@ class NeutronRouterTest(HeatTestCase):
     def test_update_router_gateway_as_property(self):
         self._create_router_with_gateway()
 
-        router.neutronV20.find_resourceid_by_name_or_id(
+        neutron.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'other_public'
@@ -1576,10 +1778,18 @@ class NeutronFloatingIPTest(HeatTestCase):
         self.m.StubOutWithMock(neutronclient.Client, 'delete_port')
         self.m.StubOutWithMock(neutronclient.Client, 'update_port')
         self.m.StubOutWithMock(neutronclient.Client, 'show_port')
+        self.m.StubOutWithMock(neutron.neutronV20,
+                               'find_resourceid_by_name_or_id')
         self.m.StubOutWithMock(clients.OpenStackClients, 'keystone')
         utils.setup_dummy_db()
 
     def test_floating_ip(self):
+        self._test_floating_ip()
+
+    def test_floating_ip_deprecated(self):
+        self._test_floating_ip(resolve_neutron=False)
+
+    def _test_floating_ip(self, resolve_neutron=True):
 
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
@@ -1605,14 +1815,24 @@ class NeutronFloatingIPTest(HeatTestCase):
         neutronclient.Client.delete_floatingip(
             'fc68ea2c-b60b-4b4f-bd82-94ec81110766').AndRaise(
                 qe.NeutronClientException(status_code=404))
-        self.m.ReplayAll()
+        if resolve_neutron:
+            t = template_format.parse(neutron_floating_template)
+            neutron.neutronV20.find_resourceid_by_name_or_id(
+                mox.IsA(neutronclient.Client),
+                'network',
+                'abcd1234'
+            ).AndReturn('abcd1234')
+        else:
+            t = template_format.parse(neutron_floating_template_deprecated)
 
-        t = template_format.parse(neutron_floating_template)
         stack = utils.parse_stack(t)
 
         # assert the implicit dependency between the floating_ip
         # and the gateway
+        self.m.ReplayAll()
+
         deps = stack.dependencies[stack['gateway']]
+
         self.assertIn(stack['floating_ip'], deps)
 
         fip = stack['floating_ip']
@@ -1642,6 +1862,16 @@ class NeutronFloatingIPTest(HeatTestCase):
 
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'network',
+            'xyz1234'
+        ).AndReturn('xyz1234')
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'subnet',
+            'sub1234'
+        ).AndReturn('sub1234')
         neutronclient.Client.create_port({'port': {
             'network_id': u'xyz1234',
             'fixed_ips': [
@@ -1713,7 +1943,7 @@ class NeutronFloatingIPTest(HeatTestCase):
         update_snippet = {
             "Type": "OS::Neutron::Port",
             "Properties": {
-                "network_id": "xyz1234",
+                "network": "xyz1234",
                 "fixed_ips": [{
                     "subnet_id": "sub1234",
                     "ip_address": "10.0.0.11"
@@ -1732,6 +1962,21 @@ class NeutronFloatingIPTest(HeatTestCase):
 
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'network',
+            'abcd1234'
+        ).AndReturn('abcd1234')
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'network',
+            'xyz1234'
+        ).AndReturn('xyz1234')
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'subnet',
+            'sub1234'
+        ).AndReturn('sub1234')
         neutronclient.Client.create_floatingip({
             'floatingip': {'floating_network_id': u'abcd1234'}
         }).AndReturn({'floatingip': {
@@ -1847,12 +2092,19 @@ class NeutronPortTest(HeatTestCase):
         super(NeutronPortTest, self).setUp()
         self.m.StubOutWithMock(neutronclient.Client, 'create_port')
         self.m.StubOutWithMock(neutronclient.Client, 'show_port')
+        self.m.StubOutWithMock(neutron.neutronV20,
+                               'find_resourceid_by_name_or_id')
         self.m.StubOutWithMock(clients.OpenStackClients, 'keystone')
         utils.setup_dummy_db()
 
     def test_missing_subnet_id(self):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'network',
+            'net1234'
+        ).AndReturn('net1234')
         neutronclient.Client.create_port({'port': {
             'network_id': u'net1234',
             'fixed_ips': [
@@ -1875,7 +2127,7 @@ class NeutronPortTest(HeatTestCase):
         self.m.ReplayAll()
 
         t = template_format.parse(neutron_port_template)
-        t['Resources']['port']['Properties']['fixed_ips'][0].pop('subnet_id')
+        t['Resources']['port']['Properties']['fixed_ips'][0].pop('subnet')
         stack = utils.parse_stack(t)
 
         port = stack['port']
@@ -1886,6 +2138,17 @@ class NeutronPortTest(HeatTestCase):
     def test_missing_ip_address(self):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'network',
+            'net1234'
+        ).AndReturn('net1234')
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'subnet',
+            'sub1234'
+        ).AndReturn('sub1234')
+
         neutronclient.Client.create_port({'port': {
             'network_id': u'net1234',
             'fixed_ips': [
@@ -1918,6 +2181,11 @@ class NeutronPortTest(HeatTestCase):
     def test_missing_fixed_ips(self):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'network',
+            'net1234'
+        ).AndReturn('net1234')
         neutronclient.Client.create_port({'port': {
             'network_id': u'net1234',
             'name': utils.PhysName('test_stack', 'port'),
@@ -1951,6 +2219,11 @@ class NeutronPortTest(HeatTestCase):
     def test_allowed_address_pair(self):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'network',
+            'abcd1234'
+        ).AndReturn('abcd1234')
         neutronclient.Client.create_port({'port': {
             'network_id': u'abcd1234',
             'allowed_address_pairs': [{
@@ -1982,6 +2255,11 @@ class NeutronPortTest(HeatTestCase):
     def test_missing_mac_address(self):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'network',
+            'abcd1234'
+        ).AndReturn('abcd1234')
         neutronclient.Client.create_port({'port': {
             'network_id': u'abcd1234',
             'allowed_address_pairs': [{
@@ -2015,6 +2293,16 @@ class NeutronPortTest(HeatTestCase):
     def test_security_groups(self):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'network',
+            'net1234'
+        ).AndReturn('net1234')
+        neutron.neutronV20.find_resourceid_by_name_or_id(
+            mox.IsA(neutronclient.Client),
+            'subnet',
+            'sub1234'
+        ).AndReturn('sub1234')
         neutronclient.Client.create_port({'port': {
             'network_id': u'net1234',
             'security_groups': ['8a2f582a-e1cd-480f-b85d-b02631c10656',

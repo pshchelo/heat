@@ -15,6 +15,7 @@ from heat.engine import clients
 from heat.engine import constraints
 from heat.engine import properties
 from heat.engine.resources.neutron import neutron
+from heat.engine import support
 from heat.openstack.common import log as logging
 
 if clients.neutronclient is not None:
@@ -26,11 +27,11 @@ logger = logging.getLogger(__name__)
 class Subnet(neutron.NeutronResource):
 
     PROPERTIES = (
-        NETWORK_ID, CIDR, VALUE_SPECS, NAME, IP_VERSION,
+        NETWORK_ID, NETWORK, CIDR, VALUE_SPECS, NAME, IP_VERSION,
         DNS_NAMESERVERS, GATEWAY_IP, ENABLE_DHCP, ALLOCATION_POOLS,
         TENANT_ID, HOST_ROUTES,
     ) = (
-        'network_id', 'cidr', 'value_specs', 'name', 'ip_version',
+        'network_id', 'network', 'cidr', 'value_specs', 'name', 'ip_version',
         'dns_nameservers', 'gateway_ip', 'enable_dhcp', 'allocation_pools',
         'tenant_id', 'host_routes',
     )
@@ -50,8 +51,15 @@ class Subnet(neutron.NeutronResource):
     properties_schema = {
         NETWORK_ID: properties.Schema(
             properties.Schema.STRING,
+            support_status=support.SupportStatus(
+                support.DEPRECATED,
+                _('Use property %s.') % NETWORK),
+            required=False
+        ),
+        NETWORK: properties.Schema(
+            properties.Schema.STRING,
             _('The ID of the attached network.'),
-            required=True
+            required=False
         ),
         CIDR: properties.Schema(
             properties.Schema.STRING,
@@ -163,11 +171,17 @@ class Subnet(neutron.NeutronResource):
         if props.get(cls.GATEWAY_IP) == '':
             props[cls.GATEWAY_IP] = None
 
+    def validate(self):
+        super(Subnet, self).validate()
+        self._validate_depr_property_required(self.properties,
+                                              self.NETWORK, self.NETWORK_ID)
+
     def handle_create(self):
         props = self.prepare_properties(
             self.properties,
             self.physical_resource_name())
-
+        self._resolve_network(
+            self.neutron(), props, self.NETWORK, 'network_id')
         self._null_gateway_ip(props)
 
         subnet = self.neutron().create_subnet({'subnet': props})['subnet']
