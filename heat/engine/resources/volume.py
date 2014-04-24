@@ -176,6 +176,15 @@ class Volume(resource.Resource):
     def check_delete_complete(self, delete_task):
         return delete_task.step()
 
+    def validate(self):
+        super(Volume, self).validate()
+
+        if (bool(self.properties[self.SIZE]) ==
+                bool(self.properties[self.BACKUP_ID])):
+            mesg = _("Need to provide either %(size)s or %(bak)s") % {
+                'size': self.SIZE, 'bak': self.BACKUP_ID}
+            raise exception.StackValidationFailed(mesg)
+
 
 class VolumeAttachTask(object):
     """A task for attaching a volume to a Nova server."""
@@ -530,6 +539,9 @@ class CinderVolume(Volume):
         if name == 'metadata':
             return unicode(json.dumps(vol.metadata))
         return unicode(getattr(vol, name))
+
+    def validate(self):
+        super(Volume, self).validate()
 
 
 class CinderVolumeAttachment(VolumeAttachment):
