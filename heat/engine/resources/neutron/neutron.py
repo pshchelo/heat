@@ -51,21 +51,6 @@ class NeutronResource(resource.Resource):
                 return '%s not allowed in value_specs' % k
 
     @staticmethod
-    def _validate_depr_property_required(properties, prop_key, depr_prop_key):
-            prop_value = properties.get(prop_key)
-            depr_prop_value = properties.get(depr_prop_key)
-
-            if prop_value and depr_prop_value:
-                raise exception.ResourcePropertyConflict(prop_key,
-                                                         depr_prop_key)
-            if not prop_value and not depr_prop_value:
-                msg = _('Either %(prop_key)s or %(depr_prop_key)s'
-                        ' should be specified.'
-                        ), {'prop_key': prop_key,
-                            'depr_prop_key': depr_prop_key}
-                raise exception.StackValidationFailed(message=msg)
-
-    @staticmethod
     def prepare_properties(properties, name):
         '''
         Prepares the property values so that they can be passed directly to

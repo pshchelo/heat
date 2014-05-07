@@ -174,8 +174,9 @@ class Subnet(neutron.NeutronResource):
 
     def validate(self):
         super(Subnet, self).validate()
-        self._validate_depr_property_required(self.properties,
-                                              self.NETWORK, self.NETWORK_ID)
+        self.validate_mex_properties(self.properties,
+                                     self.NETWORK, self.NETWORK_ID,
+                                     required=True)
 
     def handle_create(self):
         props = self.prepare_properties(

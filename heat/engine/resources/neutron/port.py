@@ -170,8 +170,9 @@ class Port(neutron.NeutronResource):
 
     def validate(self):
         super(Port, self).validate()
-        self._validate_depr_property_required(self.properties,
-                                              self.NETWORK, self.NETWORK_ID)
+        self.validate_mex_properties(self.properties,
+                                     self.NETWORK, self.NETWORK_ID,
+                                     required=True)
 
     def add_dependencies(self, deps):
         super(Port, self).add_dependencies(deps)

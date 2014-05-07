@@ -671,6 +671,27 @@ class ResourceTest(HeatTestCase):
         self.assertRaises(exception.ResourceFailure, resume)
         self.assertEqual((res.RESUME, res.FAILED), res.state)
 
+    def test_validate_mex_properties(self):
+        tmpl = {"Type": "Foo"}
+        res = generic_rsrc.GenericResource('test_resource', tmpl, self.stack)
+        res.properties = {'foo': 'abc',
+                          'bar': 'cba'}
+        self.assertRaises(exception.ResourcePropertyConflict,
+                          res.validate_mex_properties,
+                          res.properties, 'foo', 'bar')
+
+        res.properties = {'foo': 'abc'}
+        self.assertIsNone(res.validate_mex_properties(
+            res.properties, 'foo', 'bar'))
+
+        res.properties = {}
+        self.assertIsNone(res.validate_mex_properties(
+            res.properties, 'foo', 'bar'))
+        self.assertRaises(exception.StackValidationFailed,
+                          res.validate_mex_properties,
+                          res.properties,
+                          'foo', 'bar', required=True)
+
     def test_resource_class_to_template(self):
 
         class TestResource(resource.Resource):

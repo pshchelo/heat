@@ -307,8 +307,8 @@ class Pool(neutron.NeutronResource):
         res = super(Pool, self).validate()
         if res:
             return res
-        self._validate_depr_property_required(
-            self.properties, self.SUBNET, self.SUBNET_ID)
+        self.validate_mex_properties(
+            self.properties, self.SUBNET, self.SUBNET_ID, required=True)
         session_p = self.properties[self.VIP].get(self.VIP_SESSION_PERSISTENCE)
         if session_p is None:
             # session persistence is not configured, skip validation

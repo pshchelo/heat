@@ -145,8 +145,8 @@ class NetworkGateway(neutron.NeutronResource):
         connections = self.properties[self.CONNECTIONS]
 
         for connection in connections:
-            self._validate_depr_property_required(
-                connection, self.NETWORK, self.NETWORK_ID)
+            self.validate_mex_properties(
+                connection, self.NETWORK, self.NETWORK_ID, required=True)
             segmentation_type = connection[self.SEGMENTATION_TYPE]
             segmentation_id = connection.get(self.SEGMENTATION_ID)
 

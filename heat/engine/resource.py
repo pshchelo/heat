@@ -653,6 +653,29 @@ class Resource(object):
                 msg = _('Snapshot DeletionPolicy not supported')
                 raise exception.StackValidationFailed(message=msg)
 
+    @staticmethod
+    def validate_mex_properties(properties, prop_key_one, prop_key_two,
+                                required=False):
+        """Checks two mutually exclusive properties for consistency.
+
+        Raise an error if both properties are specified.
+        Raise an error if none of them are specified and they are required.
+
+        """
+        prop_value_one = properties.get(prop_key_one)
+        prop_value_two = properties.get(prop_key_two)
+
+        if prop_value_one and prop_value_two:
+            raise exception.ResourcePropertyConflict(prop_key_one,
+                                                     prop_key_two)
+        if required:
+            if not prop_value_one and not prop_value_two:
+                msg = _('Either %(prop_key_one)s or %(prop_key_two)s'
+                        ' must be specified.') % {
+                            'prop_key_one': prop_key_one,
+                            'prop_key_two': prop_key_two}
+                raise exception.StackValidationFailed(message=msg)
+
     def delete(self):
         '''
         Delete the resource. Subclasses should provide a handle_delete() method

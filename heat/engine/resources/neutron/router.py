@@ -11,7 +11,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from heat.common import exception
 from heat.engine import clients
 from heat.engine import properties
 from heat.engine.resources.neutron import neutron
@@ -208,33 +207,23 @@ class RouterInterface(neutron.NeutronResource):
         ),
     }
 
-    @staticmethod
-    def _validate_depr_subnet_keys(properties, subnet_key, depr_subnet_key):
-        subnet_value = properties.get(subnet_key)
-        subnet_id_value = properties.get(depr_subnet_key)
-        if subnet_value and subnet_id_value:
-            raise exception.ResourcePropertyConflict(subnet_key,
-                                                     subnet_key)
-        if not subnet_value and not subnet_id_value:
-            return False
-        return True
-
     def validate(self):
         '''
         Validate any of the provided params
         '''
         super(RouterInterface, self).validate()
 
-        prop_subnet_exists = self._validate_depr_subnet_keys(
+        self.validate_mex_properties(
             self.properties, self.SUBNET, self.SUBNET_ID)
 
-        port_id = self.properties.get(self.PORT_ID)
-        if prop_subnet_exists and port_id:
-            raise exception.ResourcePropertyConflict(self.SUBNET,
-                                                     self.PORT_ID)
-        if not prop_subnet_exists and not port_id:
-            msg = 'Either subnet or port_id must be specified.'
-            raise exception.StackValidationFailed(message=msg)
+        # check in this order so that when none is present
+        # user is hinted to use subnet or port, not subnet_id
+        if not self.properties.get(self.SUBNET_ID):
+            self.validate_mex_properties(self.properties, self.SUBNET,
+                                         self.PORT_ID, required=True)
+        elif not self.properties.get(self.SUBNET):
+            self.validate_mex_properties(self.properties, self.SUBNET_ID,
+                                         self.PORT_ID, required=True)
 
     def handle_create(self):
         router_id = self.properties.get(self.ROUTER_ID)
@@ -303,8 +292,8 @@ class RouterGateway(neutron.NeutronResource):
 
     def validate(self):
         super(RouterGateway, self).validate()
-        self._validate_depr_property_required(
-            self.properties, self.NETWORK, self.NETWORK_ID)
+        self.validate_mex_properties(
+            self.properties, self.NETWORK, self.NETWORK_ID, required=True)
 
     def add_dependencies(self, deps):
         super(RouterGateway, self).add_dependencies(deps)

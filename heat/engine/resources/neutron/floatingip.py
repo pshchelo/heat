@@ -95,8 +95,8 @@ class FloatingIP(neutron.NeutronResource):
 
     def validate(self):
         super(FloatingIP, self).validate()
-        self._validate_depr_property_required(
-            self.properties, self.FLOATING_NETWORK, self.FLOATING_NETWORK_ID)
+        self.validate_mex_properties(self.properties, self.FLOATING_NETWORK,
+                                     self.FLOATING_NETWORK_ID, required=True)
 
     def handle_create(self):
         props = self.prepare_properties(
