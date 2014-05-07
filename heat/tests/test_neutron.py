@@ -22,8 +22,8 @@ from heat.engine import clients
 from heat.engine import properties
 from heat.engine import resource
 from heat.engine.resources.neutron import net
-from heat.engine.resources.neutron import neutron
 from heat.engine.resources.neutron.neutron import NeutronResource as qr
+from heat.engine.resources.neutron import neutron_utils
 from heat.engine.resources.neutron import provider_net
 from heat.engine.resources.neutron import router
 from heat.engine.resources.neutron import subnet
@@ -846,7 +846,7 @@ class NeutronSubnetTest(HeatTestCase):
         self.m.StubOutWithMock(neutronclient.Client, 'delete_subnet')
         self.m.StubOutWithMock(neutronclient.Client, 'show_subnet')
         self.m.StubOutWithMock(neutronclient.Client, 'update_subnet')
-        self.m.StubOutWithMock(neutron.neutronV20,
+        self.m.StubOutWithMock(neutron_utils.neutronV20,
                                'find_resourceid_by_name_or_id')
         self.m.StubOutWithMock(clients.OpenStackClients, 'keystone')
         utils.setup_dummy_db()
@@ -858,7 +858,7 @@ class NeutronSubnetTest(HeatTestCase):
 
     def test_subnet(self):
         t = self._test_subnet()
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'None'
@@ -1017,7 +1017,7 @@ class NeutronSubnetTest(HeatTestCase):
 
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'None'
@@ -1144,7 +1144,7 @@ class NeutronSubnetTest(HeatTestCase):
 @skipIf(neutronclient is None, 'neutronclient unavailable')
 class NeutronRouterTest(HeatTestCase):
 
-    @skipIf(neutron.neutronV20 is None, "Missing Neutron v2_0")
+    @skipIf(neutron_utils.neutronV20 is None, "Missing Neutron v2_0")
     def setUp(self):
         super(NeutronRouterTest, self).setUp()
         self.m.StubOutWithMock(neutronclient.Client, 'create_router')
@@ -1161,7 +1161,7 @@ class NeutronRouterTest(HeatTestCase):
                                'remove_router_from_l3_agent')
         self.m.StubOutWithMock(neutronclient.Client,
                                'list_l3_agent_hosting_routers')
-        self.m.StubOutWithMock(neutron.neutronV20,
+        self.m.StubOutWithMock(neutron_utils.neutronV20,
                                'find_resourceid_by_name_or_id')
         self.m.StubOutWithMock(clients.OpenStackClients, 'keystone')
         utils.setup_dummy_db()
@@ -1392,7 +1392,7 @@ class NeutronRouterTest(HeatTestCase):
         t = template_format.parse(neutron_template)
         stack = utils.parse_stack(t)
         if resolve_neutron:
-            neutron.neutronV20.find_resourceid_by_name_or_id(
+            neutron_utils.neutronV20.find_resourceid_by_name_or_id(
                 mox.IsA(neutronclient.Client),
                 'subnet',
                 '91e47a57-7508-46fe-afc9-fc454e8580e1'
@@ -1516,7 +1516,7 @@ class NeutronRouterTest(HeatTestCase):
     def test_gateway_router(self):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'fc68ea2c-b60b-4b4f-bd82-94ec81110766'
@@ -1550,7 +1550,7 @@ class NeutronRouterTest(HeatTestCase):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
 
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'public'
@@ -1632,7 +1632,7 @@ class NeutronRouterTest(HeatTestCase):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
 
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'public'
@@ -1693,7 +1693,7 @@ class NeutronRouterTest(HeatTestCase):
     def test_update_router_gateway_as_property(self):
         self._create_router_with_gateway()
 
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'other_public'
@@ -1778,7 +1778,7 @@ class NeutronFloatingIPTest(HeatTestCase):
         self.m.StubOutWithMock(neutronclient.Client, 'delete_port')
         self.m.StubOutWithMock(neutronclient.Client, 'update_port')
         self.m.StubOutWithMock(neutronclient.Client, 'show_port')
-        self.m.StubOutWithMock(neutron.neutronV20,
+        self.m.StubOutWithMock(neutron_utils.neutronV20,
                                'find_resourceid_by_name_or_id')
         self.m.StubOutWithMock(clients.OpenStackClients, 'keystone')
         utils.setup_dummy_db()
@@ -1817,7 +1817,7 @@ class NeutronFloatingIPTest(HeatTestCase):
                 qe.NeutronClientException(status_code=404))
         if resolve_neutron:
             t = template_format.parse(neutron_floating_template)
-            neutron.neutronV20.find_resourceid_by_name_or_id(
+            neutron_utils.neutronV20.find_resourceid_by_name_or_id(
                 mox.IsA(neutronclient.Client),
                 'network',
                 'abcd1234'
@@ -1862,12 +1862,12 @@ class NeutronFloatingIPTest(HeatTestCase):
 
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'xyz1234'
         ).AndReturn('xyz1234')
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'subnet',
             'sub1234'
@@ -1962,17 +1962,17 @@ class NeutronFloatingIPTest(HeatTestCase):
 
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'abcd1234'
         ).AndReturn('abcd1234')
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'xyz1234'
         ).AndReturn('xyz1234')
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'subnet',
             'sub1234'
@@ -2092,7 +2092,7 @@ class NeutronPortTest(HeatTestCase):
         super(NeutronPortTest, self).setUp()
         self.m.StubOutWithMock(neutronclient.Client, 'create_port')
         self.m.StubOutWithMock(neutronclient.Client, 'show_port')
-        self.m.StubOutWithMock(neutron.neutronV20,
+        self.m.StubOutWithMock(neutron_utils.neutronV20,
                                'find_resourceid_by_name_or_id')
         self.m.StubOutWithMock(clients.OpenStackClients, 'keystone')
         utils.setup_dummy_db()
@@ -2100,7 +2100,7 @@ class NeutronPortTest(HeatTestCase):
     def test_missing_subnet_id(self):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'net1234'
@@ -2138,12 +2138,12 @@ class NeutronPortTest(HeatTestCase):
     def test_missing_ip_address(self):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'net1234'
         ).AndReturn('net1234')
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'subnet',
             'sub1234'
@@ -2181,7 +2181,7 @@ class NeutronPortTest(HeatTestCase):
     def test_missing_fixed_ips(self):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'net1234'
@@ -2219,7 +2219,7 @@ class NeutronPortTest(HeatTestCase):
     def test_allowed_address_pair(self):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'abcd1234'
@@ -2255,7 +2255,7 @@ class NeutronPortTest(HeatTestCase):
     def test_missing_mac_address(self):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'abcd1234'
@@ -2293,12 +2293,12 @@ class NeutronPortTest(HeatTestCase):
     def test_security_groups(self):
         clients.OpenStackClients.keystone().AndReturn(
             fakes.FakeKeystoneClient())
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'network',
             'net1234'
         ).AndReturn('net1234')
-        neutron.neutronV20.find_resourceid_by_name_or_id(
+        neutron_utils.neutronV20.find_resourceid_by_name_or_id(
             mox.IsA(neutronclient.Client),
             'subnet',
             'sub1234'

@@ -14,6 +14,7 @@
 from heat.engine import clients
 from heat.engine import properties
 from heat.engine.resources.neutron import neutron
+from heat.engine.resources.neutron import neutron_utils
 from heat.engine.resources.neutron import router
 from heat.engine import support
 from heat.openstack.common import log as logging
@@ -101,7 +102,7 @@ class FloatingIP(neutron.NeutronResource):
         props = self.prepare_properties(
             self.properties,
             self.physical_resource_name())
-        self._resolve_network(
+        neutron_utils.resolve_network(
             self.neutron(), props, self.FLOATING_NETWORK,
             'floating_network_id')
         fip = self.neutron().create_floatingip({
