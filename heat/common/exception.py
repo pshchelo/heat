@@ -312,6 +312,15 @@ class ResourcePropertyConflict(HeatException):
         super(ResourcePropertyConflict, self).__init__()
 
 
+class MutuallyExclusivePropertiesProvided(HeatException):
+    msg_fmt = _('Cannot define property %(prop)s along with: %(conflicts)s')
+
+    def __init__(self, prop, *conflicts):
+        self.msg_fmt = self.msg_fmt % {'prop': prop,
+                                       'conflicts': ", ".join(conflicts)}
+        super(MutuallyExclusivePropertiesProvided, self).__init__()
+
+
 class HTTPExceptionDisguise(Exception):
     """Disguises HTTP exceptions so they can be handled by the webob fault
     application in the wsgi pipeline.

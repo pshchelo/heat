@@ -984,21 +984,24 @@ class ResourceTest(common.HeatTestCase):
         expected_template = {
             'HeatTemplateFormatVersion': '2012-12-12',
             'Parameters': {
-                'name': {'Type': 'String'},
-                'bool': {'Type': 'Boolean',
+                'name': {'Type': 'String', 'Conflicts': []},
+                'bool': {'Type': 'Boolean', 'Conflicts': [],
                          'AllowedValues': ['True', 'true', 'False', 'false']},
                 'implemented': {
                     'Type': 'String',
                     'AllowedPattern': '.*',
                     'MaxLength': 7,
-                    'MinLength': 2
+                    'MinLength': 2,
+                    'Conflicts': []
                 },
                 'number': {'Type': 'Number',
                            'MaxValue': 77,
                            'MinValue': 41,
-                           'Default': 42},
-                'list': {'Type': 'CommaDelimitedList'},
-                'map': {'Type': 'Json'}
+                           'Default': 42,
+                           'Conflicts': []
+                           },
+                'list': {'Type': 'CommaDelimitedList', 'Conflicts': []},
+                'map': {'Type': 'Json', 'Conflicts': []}
             },
             'Resources': {
                 'TestResource': {

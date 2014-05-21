@@ -2251,12 +2251,14 @@ class StackServiceTest(common.HeatTestCase):
                     'required': False,
                     'update_allowed': False,
                     'immutable': False,
+                    'conflicts': []
                 },
                 'FooInt': {
                     'type': 'integer',
                     'required': False,
                     'update_allowed': False,
                     'immutable': False,
+                    'conflicts': []
                 },
             },
             'attributes': {

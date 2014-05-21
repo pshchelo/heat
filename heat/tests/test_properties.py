@@ -35,7 +35,8 @@ class PropertySchemaTest(testtools.TestCase):
             'immutable': False,
             'constraints': [
                 {'length': {'min': 4, 'max': 8}},
-            ]
+            ],
+            'conflicts': []
         }
         s = properties.Schema(properties.Schema.STRING, 'A string',
                               default='wibble', required=True,
@@ -56,12 +57,14 @@ class PropertySchemaTest(testtools.TestCase):
                     'immutable': False,
                     'constraints': [
                         {'length': {'min': 4, 'max': 8}},
-                    ]
+                    ],
+                    'conflicts': []
                 }
             },
             'required': False,
             'update_allowed': False,
             'immutable': False,
+            'conflicts': []
         }
         s = properties.Schema(properties.Schema.STRING, 'A string',
                               default='wibble', required=True,
@@ -83,12 +86,14 @@ class PropertySchemaTest(testtools.TestCase):
                     'immutable': False,
                     'constraints': [
                         {'length': {'min': 4, 'max': 8}},
-                    ]
+                    ],
+                    'conflicts': []
                 }
             },
             'required': False,
             'update_allowed': False,
             'immutable': False,
+            'conflicts': []
         }
         s = properties.Schema(properties.Schema.STRING, 'A string',
                               default='wibble', required=True,
@@ -115,17 +120,20 @@ class PropertySchemaTest(testtools.TestCase):
                             'immutable': False,
                             'constraints': [
                                 {'length': {'min': 4, 'max': 8}},
-                            ]
+                            ],
+                            'conflicts': []
                         }
                     },
                     'required': False,
                     'update_allowed': False,
                     'immutable': False,
+                    'conflicts': []
                 }
             },
             'required': False,
             'update_allowed': False,
             'immutable': False,
+            'conflicts': []
         }
         s = properties.Schema(properties.Schema.STRING, 'A string',
                               default='wibble', required=True,
@@ -1211,7 +1219,8 @@ class PropertiesTest(testtools.TestCase):
                     {"allowed_pattern": "[a-zA-Z][a-zA-Z0-9]*",
                      "description": "must begin with a letter and contain "
                                     "only alphanumeric characters."},
-                ]
+                ],
+                'conflicts': []
             },
             "LinuxDistribution": {
                 "type": "string",
@@ -1222,7 +1231,8 @@ class PropertiesTest(testtools.TestCase):
                 "constraints": [
                     {"allowed_values": ["F18", "F17", "U10",
                                         "RHEL-6.1", "RHEL-6.2", "RHEL-6.3"]}
-                ]
+                ],
+                'conflicts': []
             },
             "InstanceType": {
                 "type": "string",
@@ -1242,7 +1252,8 @@ class PropertiesTest(testtools.TestCase):
                                         "c1.xlarge",
                                         "cc1.4xlarge"],
                      "description": "must be a valid EC2 instance type."},
-                ]
+                ],
+                'conflicts': []
             },
             "DBRootPassword": {
                 "type": "string",
@@ -1257,7 +1268,8 @@ class PropertiesTest(testtools.TestCase):
                     {"allowed_pattern": "[a-zA-Z0-9]*",
                      "description": "must contain only alphanumeric "
                                     "characters."},
-                ]
+                ],
+                'conflicts': []
             },
             "KeyName": {
                 "type": "string",
@@ -1266,6 +1278,7 @@ class PropertiesTest(testtools.TestCase):
                 "required": True,
                 'update_allowed': True,
                 'immutable': False,
+                'conflicts': []
             },
             "DBPassword": {
                 "type": "string",
@@ -1280,7 +1293,8 @@ class PropertiesTest(testtools.TestCase):
                     {"allowed_pattern": "[a-zA-Z0-9]*",
                      "description": "must contain only alphanumeric "
                                     "characters."},
-                ]
+                ],
+                'conflicts': []
             },
             "DBName": {
                 "type": "string",
@@ -1295,7 +1309,8 @@ class PropertiesTest(testtools.TestCase):
                     {"allowed_pattern": "[a-zA-Z][a-zA-Z0-9]*",
                      "description": "must begin with a letter and contain "
                                     "only alphanumeric characters."},
-                ]
+                ],
+                'conflicts': []
             },
         }
         params = dict((n, parameters.Schema.from_dict(n, s)) for n, s
@@ -1394,6 +1409,7 @@ class PropertiesTest(testtools.TestCase):
                 "required": True,
                 'update_allowed': True,
                 'immutable': False,
+                'conflicts': []
             },
             "InstanceType": {
                 "type": "string",
@@ -1407,7 +1423,8 @@ class PropertiesTest(testtools.TestCase):
                                         "m2.4xlarge", "c1.medium", "c1.xlarge",
                                         "cc1.4xlarge"],
                      "description": "Must be a valid EC2 instance type."},
-                ]
+                ],
+                'conflicts': []
             },
             "LinuxDistribution": {
                 "type": "string",
@@ -1419,7 +1436,8 @@ class PropertiesTest(testtools.TestCase):
                     {"allowed_values": ["F18", "F17", "U10",
                                         "RHEL-6.1", "RHEL-6.2", "RHEL-6.3"],
                      "description": "Must be a valid Linux distribution"}
-                ]
+                ],
+                'conflicts': []
             },
             "DBName": {
                 "type": "string",
@@ -1433,7 +1451,8 @@ class PropertiesTest(testtools.TestCase):
                     {"allowed_pattern": "[a-zA-Z][a-zA-Z0-9]*",
                      "description": ("Must begin with a letter and contain "
                                      "only alphanumeric characters.")},
-                ]
+                ],
+                'conflicts': []
             },
             "DBUsername": {
                 "type": "string",
@@ -1447,7 +1466,8 @@ class PropertiesTest(testtools.TestCase):
                     {"allowed_pattern": "[a-zA-Z][a-zA-Z0-9]*",
                      "description": ("Must begin with a letter and only "
                                      "contain alphanumeric characters")},
-                ]
+                ],
+                'conflicts': []
             },
             "DBPassword": {
                 "type": "string",
@@ -1461,7 +1481,8 @@ class PropertiesTest(testtools.TestCase):
                     {"allowed_pattern": "[a-zA-Z0-9]*",
                      "description": ("Must contain only alphanumeric "
                                      "characters")},
-                ]
+                ],
+                'conflicts': []
             },
             "DBRootPassword": {
                 "type": "string",
@@ -1475,7 +1496,8 @@ class PropertiesTest(testtools.TestCase):
                     {"allowed_pattern": "[a-zA-Z0-9]*",
                      "description": ("Must contain only alphanumeric "
                                      "characters")},
-                ]
+                ],
+                'conflicts': []
             }
         }
         params = dict((n, hot_param.HOTParamSchema.from_dict(n, s)) for n, s
@@ -1612,7 +1634,7 @@ class PropertiesValidationTest(testtools.TestCase):
         schema = {'foo': {'Type': 'Map', 'Schema': nested_schema}}
 
         prop_expected = {'foo': {'Ref': 'foo'}}
-        param_expected = {'foo': {'Type': 'Json'}}
+        param_expected = {'foo': {'Type': 'Json', 'Conflicts': []}}
         (parameters, props) = \
             properties.Properties.schema_to_parameters_and_properties(schema)
         self.assertEqual(param_expected, parameters)
@@ -1627,7 +1649,8 @@ class PropertiesValidationTest(testtools.TestCase):
                   'Schema': nested_schema}}}
 
         prop_expected = {'foo': {'Fn::Split': [",", {'Ref': 'foo'}]}}
-        param_expected = {'foo': {'Type': 'CommaDelimitedList'}}
+        param_expected = {'foo': {'Type': 'CommaDelimitedList',
+                                  'Conflicts': []}}
         (parameters, props) = \
             properties.Properties.schema_to_parameters_and_properties(schema)
         self.assertEqual(param_expected, parameters)
@@ -1647,7 +1670,8 @@ class PropertiesValidationTest(testtools.TestCase):
         }
 
         prop_expected = {'foo': {'Fn::Split': [",", {'Ref': 'foo'}]}}
-        param_expected = {'foo': {'Type': 'CommaDelimitedList'}}
+        param_expected = {'foo': {'Type': 'CommaDelimitedList',
+                                  'Conflicts': []}}
         (parameters, props) = \
             properties.Properties.schema_to_parameters_and_properties(schema)
         self.assertEqual(param_expected, parameters)
@@ -1659,7 +1683,7 @@ class PropertiesValidationTest(testtools.TestCase):
                           'Implemented': True}}
 
         prop_expected = {'foo': {'Ref': 'foo'}}
-        param_expected = {'foo': {'Type': 'String'}}
+        param_expected = {'foo': {'Type': 'String', 'Conflicts': []}}
 
         (parameters, props) = \
             properties.Properties.schema_to_parameters_and_properties(schema)
@@ -1781,3 +1805,81 @@ class PropertiesValidationTest(testtools.TestCase):
             immutable=True)}
         props = properties.Properties(schema, {})
         self.assertRaises(exception.InvalidSchemaError, props.validate)
+
+    def test_conflicting_properties(self):
+        schema = {'foo': {'Type': 'String',
+                          'Required': True,
+                          'Conflicts': ['bar', 'baz']},
+                  'bar': {'Type': 'String',
+                          'Required': True,
+                          'Conflicts': ['foo', 'baz']},
+                  'baz': {'Type': 'String',
+                          'Required': True,
+                          'Conflicts': ['foo', 'bar']},
+
+                  }
+        props = properties.Properties(schema, {'foo': 'spam',
+                                               'bar': 'eggs',
+                                               'baz': 'ham'})
+        ex = self.assertRaises(exception.MutuallyExclusivePropertiesProvided,
+                               props.validate)
+        #NOTE(pshchelo) checking only for property names being present
+        # in exception message as there is no guarantee
+        # in which order they will be checked.
+        self.assertIn('foo', str(ex))
+        self.assertIn('bar', str(ex))
+        self.assertIn('baz', str(ex))
+
+    def test_conflicting_property_invalid(self):
+        schema = {'foo': {'Type': 'String',
+                          'Conflicts': ['baz']},
+                  'bar': {'Type': 'String',
+                          'Conflicts': ['foo']}
+                  }
+        props = properties.Properties(schema, {})
+        ex = self.assertRaises(exception.InvalidSchemaError,
+                               props.validate)
+        expected = "Unknown property baz is defined as conflicting with foo"
+        self.assertEqual(expected, str(ex))
+
+    def test_conflicting_properties_not_mutually_exclusive(self):
+        schema = {'foo': {'Type': 'String',
+                          'Conflicts': ['bar', 'baz']},
+                  'bar': {'Type': 'String',
+                          'Conflicts': ['foo', 'baz']},
+                  'baz': {'Type': 'String',
+                          'Conflicts': ['bar']},
+                  }
+        props = properties.Properties(schema, {})
+        ex = self.assertRaises(exception.InvalidSchemaError,
+                               props.validate)
+        self.assertEqual(
+            "Invalid definition of mutually exclusive properties. "
+            "Conflicts of foo and baz do not reference each other.",
+            str(ex))
+
+    def test_required_conflicting_property(self):
+        schema = {'foo': {'Type': 'String',
+                          'Required': True,
+                          'Conflicts': ['bar']},
+                  'bar': {'Type': 'String',
+                          'Required': True,
+                          'Conflicts': ['foo']}
+                  }
+        props = properties.Properties(schema, {'foo': 'spam'})
+        self.assertIsNone(props.validate())
+
+    def test_property_self_conflicting_fails(self):
+        schema = {'foo': {'Type': 'String',
+                          'Required': True,
+                          'Conflicts': ['foo']},
+                  'bar': {'Type': 'String',
+                          'Required': True,
+                          'Conflicts': ['foo']}
+                  }
+        props = properties.Properties(schema, {})
+        ex = self.assertRaises(exception.InvalidSchemaError,
+                               props.validate)
+        self.assertEqual(
+            "Property foo conflicts with self.",
+            str(ex))

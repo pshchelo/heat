@@ -27,11 +27,11 @@ from heat.engine import constraints as constr
 PARAMETER_KEYS = (
     TYPE, DEFAULT, NO_ECHO, ALLOWED_VALUES, ALLOWED_PATTERN,
     MAX_LENGTH, MIN_LENGTH, MAX_VALUE, MIN_VALUE,
-    DESCRIPTION, CONSTRAINT_DESCRIPTION, LABEL
+    DESCRIPTION, CONSTRAINT_DESCRIPTION, LABEL, CONFLICTS,
 ) = (
     'Type', 'Default', 'NoEcho', 'AllowedValues', 'AllowedPattern',
     'MaxLength', 'MinLength', 'MaxValue', 'MinValue',
-    'Description', 'ConstraintDescription', 'Label'
+    'Description', 'ConstraintDescription', 'Label', 'Conflicts',
 )
 
 
@@ -39,10 +39,11 @@ class Schema(constr.Schema):
     '''Parameter schema.'''
 
     KEYS = (
-        TYPE, DESCRIPTION, DEFAULT, SCHEMA, CONSTRAINTS, HIDDEN, LABEL
+        TYPE, DESCRIPTION, DEFAULT, SCHEMA, CONSTRAINTS, HIDDEN,
+        LABEL,
     ) = (
         'Type', 'Description', 'Default', 'Schema', 'Constraints', 'NoEcho',
-        'Label'
+        'Label',
     )
 
     PARAMETER_KEYS = PARAMETER_KEYS
@@ -56,7 +57,7 @@ class Schema(constr.Schema):
     )
 
     def __init__(self, data_type, description=None, default=None, schema=None,
-                 constraints=None, hidden=False, label=None):
+                 constraints=None, hidden=False, label=None, conflicts=None):
         super(Schema, self).__init__(data_type=data_type,
                                      description=description,
                                      default=default,
@@ -65,6 +66,7 @@ class Schema(constr.Schema):
                                      constraints=constraints,
                                      label=label)
         self.hidden = hidden
+        self.conflicts = conflicts or []
 
     # Schema class validates default value for lists assuming list type. For
     # comma delimited list string supported in parameters Schema class, the
@@ -156,7 +158,8 @@ class Schema(constr.Schema):
                    constraints=list(constraints()),
                    hidden=str(schema_dict.get(NO_ECHO,
                                               'false')).lower() == 'true',
-                   label=schema_dict.get(LABEL))
+                   label=schema_dict.get(LABEL),
+                   conflicts=schema_dict.get(CONFLICTS))
 
     def validate_value(self, value, context=None):
         super(Schema, self).validate_constraints(value, context)
@@ -269,6 +272,10 @@ class Parameter(object):
     def default(self):
         '''Return the default value of the parameter.'''
         return self.schema.default
+
+    def conflicts(self):
+        '''Return list of conflicting parameters.'''
+        return self.schema.conflicts
 
     def __str__(self):
         '''Return a string representation of the parameter'''
@@ -497,6 +504,19 @@ class Parameters(collections.Mapping):
         for param in self.user_params:
             if param not in schemata:
                 raise exception.UnknownUserParameter(key=param)
+            # check validity of conflicts definitions
+            conflicts = schemata[param].conflicts
+            if conflicts:
+                for conflict in conflicts:
+                    if conflict not in schemata:
+                        raise exception.UnknownUserParameter(key=conflict)
+                    if conflict == param:
+                        msg = _("Parameter %s conflicts with self.") % param
+                        raise exception.InvalidSchemaError(message=msg)
+                    if conflict in self.user_params:
+                        msg = _("Parameter %(c)s conflicts with %(p)s.") % {
+                            'c': conflict, 'p': param}
+                        raise exception.InvalidSchemaError(message=msg)
 
     def _validate_tmpl_parameters(self):
         param = None

@@ -26,12 +26,12 @@ SCHEMA_KEYS = (
     REQUIRED, IMPLEMENTED, DEFAULT, TYPE, SCHEMA,
     ALLOWED_PATTERN, MIN_VALUE, MAX_VALUE, ALLOWED_VALUES,
     MIN_LENGTH, MAX_LENGTH, DESCRIPTION, UPDATE_ALLOWED,
-    IMMUTABLE,
+    IMMUTABLE, CONFLICTS
 ) = (
     'Required', 'Implemented', 'Default', 'Type', 'Schema',
     'AllowedPattern', 'MinValue', 'MaxValue', 'AllowedValues',
     'MinLength', 'MaxLength', 'Description', 'UpdateAllowed',
-    'Immutable',
+    'Immutable', 'Conflicts'
 )
 
 
@@ -46,10 +46,10 @@ class Schema(constr.Schema):
 
     KEYS = (
         TYPE, DESCRIPTION, DEFAULT, SCHEMA, REQUIRED, CONSTRAINTS,
-        UPDATE_ALLOWED, IMMUTABLE,
+        UPDATE_ALLOWED, IMMUTABLE, CONFLICTS
     ) = (
         'type', 'description', 'default', 'schema', 'required', 'constraints',
-        'update_allowed', 'immutable',
+        'update_allowed', 'immutable', 'conflicts'
     )
 
     def __init__(self, data_type, description=None,
@@ -58,13 +58,15 @@ class Schema(constr.Schema):
                  implemented=True,
                  update_allowed=False,
                  immutable=False,
-                 support_status=support.SupportStatus()):
+                 support_status=support.SupportStatus(),
+                 conflicts=None):
         super(Schema, self).__init__(data_type, description, default,
                                      schema, required, constraints)
         self.implemented = implemented
         self.update_allowed = update_allowed
         self.immutable = immutable
         self.support_status = support_status
+        self.conflicts = conflicts or []
         # validate structural correctness of schema itself
         self.validate()
 
@@ -126,7 +128,9 @@ class Schema(constr.Schema):
                    constraints=list(constraints()),
                    implemented=schema_dict.get(IMPLEMENTED, True),
                    update_allowed=schema_dict.get(UPDATE_ALLOWED, False),
-                   immutable=schema_dict.get(IMMUTABLE, False))
+                   immutable=schema_dict.get(IMMUTABLE, False),
+                   conflicts=schema_dict.get(CONFLICTS)
+                   )
 
     @classmethod
     def from_parameter(cls, param):
@@ -178,6 +182,8 @@ class Schema(constr.Schema):
             return self.update_allowed
         elif key == self.IMMUTABLE:
             return self.immutable
+        elif key == self.CONFLICTS:
+            return self.conflicts
         else:
             return super(Schema, self).__getitem__(key)
 
@@ -224,6 +230,9 @@ class Property(object):
 
     def support_status(self):
         return self.schema.support_status
+
+    def conflicts(self):
+        return self.schema.conflicts
 
     def _get_integer(self, value):
         if value is None:
@@ -368,15 +377,58 @@ class Properties(collections.Mapping):
                     msg = _("Property error : %s") % e
                     raise exception.StackValidationFailed(message=msg)
 
+        def conflict_prop_provided(prop):
+            provided = set([key in self.data for key in prop.conflicts()])
+            return provided == set((True,))
+
+        for (key, prop) in self.props.items():
             # are there unimplemented Properties
             if not prop.implemented() and key in self.data:
                 msg = _("Property %s not implemented yet") % key
                 raise exception.StackValidationFailed(message=msg)
 
+            # validate defined conflicting properties for consistency
+            for conflict in prop.conflicts():
+                # check that conflicting properties are defined in schema
+                if conflict not in self.props:
+                    msg = _("Unknown property %(conflict)s is defined "
+                            "as conflicting with %(prop)s") % {
+                                'conflict': conflict, 'prop': key}
+                    raise exception.InvalidSchemaError(message=msg)
+                if conflict == key:
+                    msg = _("Property %s conflicts with self.") % key
+                    raise exception.InvalidSchemaError(message=msg)
+                # check that conflicting properties are *mutually* exclusive
+                if key not in self.props[conflict].conflicts():
+                    msg = _("Invalid definition of mutually exclusive "
+                            "properties. Conflicts of %(prop)s and "
+                            "%(conflict)s do not reference each other.") % {
+                                'prop': key,
+                                'conflict': conflict}
+                    raise exception.InvalidSchemaError(message=msg)
+
+            if with_value:
+                try:
+                    self._get_property_value(key, validate=True)
+                except ValueError as e:
+                    # it is ok if prop is required and missing
+                    # but a conflicting property is provided
+                    if not (prop.required() and
+                            conflict_prop_provided(prop)):
+                        msg = _("Property error : %s") % e
+                        raise exception.StackValidationFailed(message=msg)
+
         for key in self.data:
+            # check that property is defined
             if key not in self.props:
                 msg = _("Unknown Property %s") % key
                 raise exception.StackValidationFailed(message=msg)
+
+            # check that no conflicting property is provided
+            prop = self.props[key]
+            if conflict_prop_provided(prop):
+                raise exception.MutuallyExclusivePropertiesProvided(
+                    key, *prop.conflicts())
 
     def _get_property_value(self, key, validate=False):
         if key not in self:
@@ -460,6 +512,8 @@ class Properties(collections.Mapping):
             if schema.type == schema.BOOLEAN:
                 yield parameters.ALLOWED_VALUES, ['True', 'true',
                                                   'False', 'false']
+
+            yield parameters.CONFLICTS, schema.conflicts
 
         return dict(param_items())
 
