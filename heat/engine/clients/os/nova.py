@@ -328,16 +328,16 @@ echo -e '%s\tALL=(ALL)\tNOPASSWD: ALL' >> /etc/sudoers
                                                     "message": message})
 
     @scheduler.wrappertask
-    def resize(self, server, flavor, flavor_id):
+    def resize(self, server, flavor, flavor_id, container=None):
         """Resize the server and then call check_resize task to verify."""
         server.resize(flavor_id)
-        yield self.check_resize(server, flavor, flavor_id)
+        yield self.check_resize(server, flavor, flavor_id, container=container)
 
     def rename(self, server, name):
         """Update the name for a server."""
         server.update(name)
 
-    def check_resize(self, server, flavor, flavor_id):
+    def check_resize(self, server, flavor, flavor_id, container=None):
         """
         Verify that a resizing server is properly resized.
         If that's the case, confirm the resize, if not raise an error.
@@ -347,7 +347,18 @@ echo -e '%s\tALL=(ALL)\tNOPASSWD: ALL' >> /etc/sudoers
             yield
             self.refresh_server(server)
         if server.status == 'VERIFY_RESIZE':
-            server.confirm_resize()
+            if container is None:
+                server.confirm_resize()
+            else:
+                #FIXME: wrong, placeholder for now
+                swift = self.swift()
+
+                swift.put_object(name=server.id, content=server.status)
+                container_status = server.status
+                while container_status != 'CONFIRMED':
+                    yield
+                    obj = contaiiner.get_object(initobj)
+                    container_status = obj.data['status']
         else:
             raise exception.Error(
                 _("Resizing to '%(flavor)s' failed, status '%(status)s'") %

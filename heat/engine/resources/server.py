@@ -45,14 +45,14 @@ class Server(stack_user.StackUser):
         ADMIN_USER, AVAILABILITY_ZONE, SECURITY_GROUPS, NETWORKS,
         SCHEDULER_HINTS, METADATA, USER_DATA_FORMAT, USER_DATA,
         RESERVATION_ID, CONFIG_DRIVE, DISK_CONFIG, PERSONALITY,
-        ADMIN_PASS, SOFTWARE_CONFIG_TRANSPORT
+        ADMIN_PASS, SOFTWARE_CONFIG_TRANSPORT, RESIZE_VERIFIER
     ) = (
         'name', 'image', 'block_device_mapping', 'flavor',
         'flavor_update_policy', 'image_update_policy', 'key_name',
         'admin_user', 'availability_zone', 'security_groups', 'networks',
         'scheduler_hints', 'metadata', 'user_data_format', 'user_data',
         'reservation_id', 'config_drive', 'diskConfig', 'personality',
-        'admin_pass', 'software_config_transport'
+        'admin_pass', 'software_config_transport', 'resize_verifier'
     )
 
     _BLOCK_DEVICE_MAPPING_KEYS = (
@@ -306,6 +306,11 @@ class Server(stack_user.StackUser):
             properties.Schema.STRING,
             _('The administrator password for the server.'),
             required=False,
+            update_allowed=True
+        ),
+        RESIZE_VERIFIER: properties.Schema(
+            properties.Schema.STRING,
+            _("ID of Swift container to use for server resize verification."),
             update_allowed=True
         ),
     }
@@ -784,8 +789,11 @@ class Server(stack_user.StackUser):
             flavor_id = self.client_plugin().get_flavor_id(flavor)
             if not server:
                 server = self.nova().servers.get(self.resource_id)
+            verifier = prop_diff.get(
+                self.RESIZE_VERIFIER) or self.properties[self.RESIZE_VERIFIER]
             checker = scheduler.TaskRunner(self.client_plugin().resize,
-                                           server, flavor, flavor_id)
+                                           server, flavor, flavor_id,
+                                           container=verifier)
             checkers.append(checker)
 
         if self.IMAGE in prop_diff:
